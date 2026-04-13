@@ -1,10 +1,7 @@
 import os
-import re
-import asyncio
 import httpx
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-from typing import Annotated, TypedDict, List, Optional
+from typing import Annotated, TypedDict, List
 from dotenv import load_dotenv
 
 # ✅ Switched from Google to Groq
@@ -18,42 +15,6 @@ from app.core.prompts import CHATBOT_ROLE
 from app.schemas.chat import ChatMessage
 
 load_dotenv()
-
-
-def _normalize_url(candidate: Optional[str]) -> Optional[str]:
-    if not candidate:
-        return None
-
-    url = candidate.strip().strip("[]()<>\"'")
-    if not url:
-        return None
-
-    if not re.match(r"^https?://", url, flags=re.IGNORECASE):
-        if re.match(r"^[\w.-]+\.[a-zA-Z]{2,}(?:/.*)?$", url):
-            url = f"https://{url}"
-        else:
-            return None
-
-    parsed = urlparse(url)
-    if not parsed.scheme or not parsed.netloc:
-        return None
-
-    return url
-
-
-def _extract_first_url(text: str) -> Optional[str]:
-    if not text:
-        return None
-
-    direct = re.search(r"https?://[^\s\])>\"']+", text, flags=re.IGNORECASE)
-    if direct:
-        return _normalize_url(direct.group(0))
-
-    domain_like = re.search(r"\b(?:www\.)?[\w.-]+\.[a-zA-Z]{2,}(?:/[^\s\])>\"']*)?", text)
-    if domain_like:
-        return _normalize_url(domain_like.group(0))
-
-    return None
 
 # --- TOOL DEFINITION ---
 @tool
@@ -108,12 +69,11 @@ class AgenticService:
             )
 
         # ✅ Updated to Groq API (OpenAI-compatible routing)
-        self.base_llm = ChatGroq(
+        self.llm = ChatGroq(
             model="llama-3.3-70b-versatile", # Fast & reliable Groq model
             groq_api_key=groq_api_key,
             temperature=0.0,
-        )
-        self.llm = self.base_llm.bind_tools([fetch_website_content])
+        ).bind_tools([fetch_website_content])
 
         # Graph Construction
         builder = StateGraph(AgentState)
@@ -143,52 +103,7 @@ class AgenticService:
         response = await self.llm.ainvoke(full_history)
         return {"messages": [response]}
 
-    @staticmethod
-    def _extract_text_content(content) -> str:
-        if isinstance(content, list):
-            extracted_text = ""
-            for part in content:
-                if isinstance(part, dict) and part.get("type") == "text":
-                    extracted_text += part.get("text", "")
-                elif isinstance(part, str):
-                    extracted_text += part
-            return extracted_text.strip()
-        return str(content).strip()
-
-    def _resolve_context_url(self, user_input: str, context_url: Optional[str]) -> Optional[str]:
-        return _normalize_url(context_url) or _extract_first_url(user_input)
-
-    async def _get_grounded_response(
-        self,
-        user_input: str,
-        lc_history: List[BaseMessage],
-        context_url: str,
-    ) -> str:
-        scraped_content = await asyncio.to_thread(fetch_website_content.invoke, {"url": context_url})
-
-        if isinstance(scraped_content, str) and scraped_content.startswith("Error:"):
-            return f"I could not retrieve website data from {context_url}. {scraped_content}"
-
-        grounded_message = (
-            f"User question:\n{user_input}\n\n"
-            f"Target website URL: {context_url}\n\n"
-            f"Scraped website content:\n{scraped_content}\n\n"
-            "Instructions:\n"
-            "- Answer only using the scraped content above.\n"
-            "- If details are missing, explicitly say they are not on the provided website.\n"
-            f"- When referring to the website, include this exact URL: {context_url}."
-        )
-
-        full_history = [SystemMessage(content=CHATBOT_ROLE)] + lc_history + [HumanMessage(content=grounded_message)]
-        response = await self.base_llm.ainvoke(full_history)
-        return self._extract_text_content(response.content)
-
-    async def get_response(
-        self,
-        user_input: str,
-        history: List[ChatMessage],
-        context_url: Optional[str] = None,
-    ) -> str:
+    async def get_response(self, user_input: str, history: List[ChatMessage]) -> str:
         # Convert API history to LangChain format
         lc_history = []
         for m in history:
@@ -196,20 +111,6 @@ class AgenticService:
                 lc_history.append(HumanMessage(content=m.content))
             else:
                 lc_history.append(AIMessage(content=m.content))
-
-        resolved_url = self._resolve_context_url(user_input=user_input, context_url=context_url)
-
-        if resolved_url:
-            print(f"🔗 [AGENT LOG] Resolved context URL: {resolved_url}")
-            try:
-                return await self._get_grounded_response(
-                    user_input=user_input,
-                    lc_history=lc_history,
-                    context_url=resolved_url,
-                )
-            except Exception as e:
-                print(f"❌ [GROUNDING ERROR] {str(e)}")
-                return f"I ran into a technical hurdle while processing website context from {resolved_url}. Error: {str(e)}"
         
         # Build initial input
         inputs = {"messages": lc_history + [HumanMessage(content=user_input)]}
@@ -220,7 +121,18 @@ class AgenticService:
             
             # --- ROBUST STRING EXTRACTION ---
             final_msg = result["messages"][-1]
-            return self._extract_text_content(final_msg.content)
+            content = final_msg.content
+            
+            if isinstance(content, list):
+                extracted_text = ""
+                for part in content:
+                    if isinstance(part, dict) and part.get("type") == "text":
+                        extracted_text += part.get("text", "")
+                    elif isinstance(part, str):
+                        extracted_text += part
+                return extracted_text.strip()
+            
+            return str(content).strip()
 
         except Exception as e:
             print(f"❌ [AGENT CRITICAL ERROR] {str(e)}")
