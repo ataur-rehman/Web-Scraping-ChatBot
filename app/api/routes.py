@@ -22,13 +22,11 @@ async def chat_endpoint(request: ChatRequest):
     try:
         agent_service = get_agent_service()
 
-        # ✅ FIX: Inject URL into message if provided
-        # The agent only "sees" the message content, so we embed the URL there
-        user_message = request.message
-        if request.url and request.url.strip():
-            user_message = f"{request.message}\n\n[Context URL: {request.url}]"
-        
-        reply = await agent_service.get_response(user_message, request.history)
+        reply = await agent_service.get_response(
+            user_input=request.message,
+            history=request.history,
+            context_url=request.url,
+        )
         
         # Debugging: See what is actually being sent to Pydantic
         print(f"✅ [SUCCESS] Sending reply to frontend: {type(reply)}")
