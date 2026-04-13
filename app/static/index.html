@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malind AI | Strategy & Intelligence</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #000000;
+            --primary-light: #333333;
+            --bg-page: #f8fafc;
+            --white: #ffffff;
+            --text-main: #1e293b;
+            --text-secondary: #64748b;
+            --ai-bubble: #f1f5f9;
+            --user-bubble: #ffffff;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .chat-widget-container {
+            width: 100vw;
+            height: 100vh;
+            background: var(--white);
+            border-radius: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .widget-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            padding: 10px 16px;
+            color: var(--white);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .avatar {
+            position: relative;
+        }
+
+        .avatar img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255, 255, 255, 0.5);
+            padding: 3px;
+            background: #ffffff;
+            object-fit: contain;
+        }
+
+        .status-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            background: #22c55e;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+        }
+
+        .header-text h3 {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .header-text p {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+
+        .status-banner {
+            font-size: 0.75rem;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .widget-chat-area {
+            flex: 1;
+            padding: 8px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: var(--white);
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 14px 18px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            border-radius: 20px;
+            animation: messageIn 0.3s ease forwards;
+        }
+
+        .ai-message {
+            background: var(--ai-bubble);
+            color: var(--text-main);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-message {
+            background: var(--white);
+            color: var(--primary);
+            align-self: flex-end;
+            border: 1.5px solid #e2e8f0;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .prompts-container {
+            padding: 0 40px 16px 40px;
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            background: var(--white);
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .pill-btn {
+            background: var(--white);
+            border: 1.5px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 18px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+
+        .pill-btn:hover {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .widget-footer {
+            background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+            border-top: 1.5px solid #cbd5e1;
+            padding: 8px 16px 12px 16px;
+        }
+
+        .footer-content {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background: var(--white);
+            border-radius: 8px;
+            padding: 0 12px;
+            border: 1px solid #d1d5db;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        #user-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            padding: 12px 0;
+        }
+
+        #user-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .footer-icons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 8px;
+        }
+
+        .pill-icon-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            display: flex;
+            transition: 0.2s;
+            padding: 4px;
+        }
+
+        .pill-icon-btn:hover {
+            color: var(--primary);
+        }
+
+        .pill-send-btn {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border: none;
+            border-radius: 6px;
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: 0.3s;
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .pill-send-btn:hover {
+            transform: scale(1.05);
+            background: var(--primary);
+        }
+
+        .branding {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            text-align: center;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 800;
+        }
+
+        .branding strong {
+            color: #64748b;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 32px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: 0.2s;
+            line-height: 1;
+        }
+
+        .close-modal:hover {
+            color: var(--primary);
+        }
+
+        .modal-content h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+
+        .modal-content p {
+            margin-bottom: 30px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 15px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .modal-content input:focus {
+            border-color: var(--primary);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .redirect-buttons-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .redirect-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: var(--white);
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .redirect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.15);
+            color: var(--white);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .rtl {
+            direction: rtl;
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="chat-widget" class="chat-widget-container">
+        <div class="widget-header">
+            <div class="header-content">
+                <div class="avatar">
+                    <img src="/static/images/logo.png" alt="Malind AI"
+                        onerror="this.src='https://cdn-icons-png.flaticon.com/512/3241/3241462.png'">
+                    <div class="status-dot"></div>
+                </div>
+                <div class="header-text">
+                    <p style="font-size: 0.8rem; opacity: 0.8; margin: 0;">Chat with</p>
+                    <h3>Malind Strategy AI</h3>
+                </div>
+            </div>
+        </div>
+
+        <div id="chat-container" class="widget-chat-area">
+        </div>
+
+        <div class="widget-footer">
+            <div class="footer-content">
+                <div id="image-preview-container"
+                    style="display:none; padding: 10px; background: #f8fafc; border-top: 1px solid #e2e8f0; align-items: center; gap: 10px;">
+                    <div style="position:relative;">
+                        <img id="image-preview" src=""
+                            style="width:60px; height:60px; object-fit:cover; border-radius:8px; border:1px solid #cbd5e1;">
+                        <button onclick="clearImage()"
+                            style="position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold;">&times;</button>
+                    </div>
+                    <span style="font-size:12px; color:#64748b;">Image attached</span>
+                </div>
+                <div class="input-wrapper">
+                    <div class="footer-icons">
+                        <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                        <button class="pill-icon-btn" onclick="document.getElementById('image-upload').click()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z">
+                                </path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                        </button>
+                        <button id="voice-btn" class="pill-icon-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <input type="text" id="user-input" placeholder="Enter your message...">
+                    <button id="send-btn" class="pill-send-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="lead-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="dismissLeadForm()">&times;</span>
+            <h2>Access Verification</h2>
+            <p>Please provide credentials to unlock the AI strategist.</p>
+            <form id="lead-form">
+                <input type="text" id="lead-name" placeholder="Full Name" required>
+                <input type="email" id="lead-email" placeholder="Professional Email" required>
+                <input type="tel" id="lead-phone" placeholder="Phone Number" required>
+                <button type="submit" class="submit-btn" id="lead-submit">Verify & Continue</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        let messages = [];
+        let leadSubmitted = false;
+        let currentImageBase64 = null;
+        let currentImageFile = null;
+        let userMessageCount = 0;
+
+        // Optional hardcoded backend API for Vercel frontend -> Railway backend.
+        // Example: 'https://your-backend.up.railway.app/api/v1'
+        const DEPLOY_API_BASE = '';
+
+        function normalizeApiBase(value) {
+            return String(value || '').trim().replace(/\/$/, '');
+        }
+
+        function resolveApiUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const apiBase = params.get('api_base');
+            if (apiBase) {
+                return normalizeApiBase(apiBase);
+            }
+
+            if (DEPLOY_API_BASE) {
+                return normalizeApiBase(DEPLOY_API_BASE);
+            }
+
+            if (window.location.protocol === 'file:') {
+                return 'http://127.0.0.1:8000/api/v1';
+            }
+
+            // Frontend on Vercel with backend on Railway must provide api_base or DEPLOY_API_BASE.
+            if (window.location.hostname.endsWith('vercel.app')) {
+                return '';
+            }
+
+            if (window.location.origin && window.location.origin.startsWith('http')) {
+                return `${window.location.origin}/api/v1`;
+            }
+
+            return '/api/v1';
+        }
+
+        const API_URL = resolveApiUrl();
+        const DEFAULT_CONTEXT_URL = 'https://malindtech.com/';
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const leadModal = document.getElementById('lead-modal');
+        const leadForm = document.getElementById('lead-form');
+
+        function init() {
+            document.getElementById('image-upload').value = '';
+            document.getElementById('image-preview-container').style.display = 'none';
+            document.getElementById('image-preview').src = '';
+            userInput.value = '';
+
+            try {
+                const savedHistory = localStorage.getItem('chat_history');
+                if (savedHistory) {
+                    messages = JSON.parse(savedHistory);
+                    userMessageCount = messages.filter(m => m.role === 'user').length;
+                }
+            } catch (e) {
+                console.error('History Background Sync Error:', e);
+            }
+
+            addMessage('assistant', "Hi, I'm Malind Strategy AI. How can I help with your next technical strategy?", null, true);
+            userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+            sendBtn.addEventListener('click', sendMessage);
+            leadForm.addEventListener('submit', handleLeadSubmit);
+            document.getElementById('image-upload').addEventListener('change', handleImageSelect);
+
+            const voiceBtn = document.getElementById('voice-btn');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let isRecognizing = false;
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+
+                voiceBtn.addEventListener('click', () => {
+                    if (isRecognizing) {
+                        recognition.stop();
+                        return;
+                    }
+                    try {
+                        recognition.start();
+                    } catch (err) {
+                        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                            userInput.placeholder = 'SSL/HTTPS Required for Microphone.';
+                        } else {
+                            console.error('Speech Start Error:', err);
+                        }
+                    }
+                });
+
+                recognition.onstart = () => {
+                    isRecognizing = true;
+                    voiceBtn.style.color = '#ff4b2b';
+                    voiceBtn.style.opacity = '1';
+                    userInput.placeholder = 'Listening...';
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    userInput.value = transcript;
+                    sendMessage();
+                };
+
+                recognition.onerror = (event) => {
+                    console.error('Speech Error:', event.error);
+                    if (event.error === 'not-allowed') {
+                        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                            userInput.placeholder = 'SSL/HTTPS Required for Mic.';
+                        } else {
+                            userInput.placeholder = 'Mic Permission Denied.';
+                        }
+                    } else if (event.error === 'no-speech') {
+                        userInput.placeholder = 'No speech detected.';
+                    } else {
+                        userInput.placeholder = `Voice Error: ${event.error}`;
+                    }
+                };
+
+                recognition.onend = () => {
+                    isRecognizing = false;
+                    voiceBtn.style.color = '#94a3b8';
+                    voiceBtn.style.opacity = '0.6';
+                    if (userInput.placeholder === 'Listening...') {
+                        userInput.placeholder = 'Enter your message...';
+                    }
+                };
+            } else {
+                voiceBtn.style.display = 'none';
+            }
+
+            const observer = new MutationObserver(() => {
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+            });
+            observer.observe(chatContainer, { childList: true, subtree: true });
+        }
+
+        function sendPrompt(text) {
+            userInput.value = text;
+            sendMessage();
+        }
+
+        function addMessage(role, content, imageUrl = null, save = true) {
+            const messageObj = { role, content };
+            if (imageUrl && role === 'user') {
+                messageObj.images = [imageUrl];
+            }
+            messages.push(messageObj);
+
+            if (save) {
+                try {
+                    const historyToSave = messages.map(m => {
+                        const { images, ...rest } = m;
+                        return rest;
+                    });
+                    localStorage.setItem('chat_history', JSON.stringify(historyToSave));
+                } catch (e) {
+                    console.warn('Storage full, history not saved.', e);
+                }
+            }
+
+            const msgDiv = document.createElement('div');
+            const isArabic = /[\u0600-\u06FF]/.test(content);
+            msgDiv.className = `message ${role === 'user' ? 'user-message' : 'ai-message'} ${isArabic ? 'rtl' : ''}`;
+
+            let displayContent = content;
+            let buttonHTML = '';
+            if (role === 'assistant') {
+                const urlRegex = /https?:\/\/[^\s\)\],!?;]+/g;
+                const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s\)\],!?;]+)\)/g;
+                const urls = new Set();
+                let urMatch;
+                while ((urMatch = mdLinkRegex.exec(content)) !== null) {
+                    urls.add(urMatch[2]);
+                }
+                while ((urMatch = urlRegex.exec(content)) !== null) {
+                    urls.add(urMatch[0]);
+                }
+
+                if (urls.size > 0) {
+                    const buttons = [];
+                    urls.forEach(cleanUrl => {
+                        let label = isArabic ? '🌐 عرض الرابط' : '🌐 View Link';
+                        if (cleanUrl.includes('contact-us')) label = isArabic ? '📅 احجز موعدك الآن' : '📅 Book Appointment Now';
+                        else if (cleanUrl.includes('#book-your-demo') || cleanUrl.includes('get-started')) label = isArabic ? '🚀 احجز عرضك التجريبي الآن' : '🚀 Book Your Demo Now';
+                        else if (cleanUrl.includes('ai-automation')) label = isArabic ? '🤖 أتمتة الذكاء الاصطناعي' : '🤖 AI & Automation';
+                        else if (cleanUrl.includes('linkedin.com')) label = isArabic ? '🔗 تواصل عبر لينكد إن' : '🔗 Connect on LinkedIn';
+                        else if (cleanUrl.includes('instagram.com')) label = 'Instagram';
+                        else if (cleanUrl.includes('facebook.com')) label = 'Facebook';
+                        else if (cleanUrl.includes('tiktok.com')) label = 'TikTok';
+                        else if (cleanUrl.includes('portfolio')) label = isArabic ? '📂 معرض أعمالنا' : '📂 View Our Portfolio';
+                        else if (cleanUrl.includes('malindtech.com') && cleanUrl.length < 35) label = isArabic ? '🏠 زيارة مالند تيك' : '🏠 Visit Malind Tech';
+                        buttons.push(`<a href="${cleanUrl}" target="_blank" class="redirect-btn"><span>${label}</span></a>`);
+                    });
+
+                    displayContent = content.replace(mdLinkRegex, '').replace(urlRegex, '').trim();
+                    displayContent = displayContent.replace(/[:\-\s\(\)\[\]]+$/, '').trim();
+                    if (buttons.length > 0) {
+                        buttonHTML = `<div class="redirect-buttons-container">${buttons.join('')}</div>`;
+                    }
+                }
+            }
+
+            displayContent = displayContent.replace(/•/g, '\n\n- ');
+            displayContent = displayContent.replace(/\n\n\n/g, '\n\n');
+            const parsedContent = (displayContent && typeof marked !== 'undefined') ? marked.parse(displayContent) : displayContent;
+            const imageHTML = imageUrl ? `<div style="margin-top:8px"><img src="${imageUrl}" style="max-width:100%; border-radius:12px; border:1px solid #e2e8f0; display:block;"></div>` : '';
+
+            msgDiv.innerHTML = `<div class="msg-content">${parsedContent || (imageUrl ? '' : '...')}</div>${imageHTML}${buttonHTML}`;
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text && !currentImageBase64) return;
+
+            userMessageCount++;
+            if (userMessageCount >= 5 && !leadSubmitted && !window.leadSkipped) {
+                leadModal.classList.add('active');
+                return;
+            }
+
+            const img = currentImageBase64;
+            const imgFile = currentImageFile;
+
+            document.getElementById('image-preview-container').style.display = 'none';
+            currentImageBase64 = null;
+            currentImageFile = null;
+            document.getElementById('image-upload').value = '';
+            userInput.value = '';
+            userInput.placeholder = 'Processing...';
+
+            const imageNote = imgFile ? `[Image attached: ${imgFile.name}]` : '';
+            const composedText = text && imageNote ? `${text}\n\n${imageNote}` : (text || imageNote);
+
+            addMessage('user', composedText, img);
+            await fetchResponse(composedText);
+        }
+
+        function handleImageSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                currentImageFile = file;
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    currentImageBase64 = evt.target.result;
+                    document.getElementById('image-preview').src = currentImageBase64;
+                    document.getElementById('image-preview-container').style.display = 'flex';
+                    userInput.placeholder = 'Describe the image or press send...';
+                    userInput.focus();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearImage() {
+            currentImageBase64 = null;
+            currentImageFile = null;
+            document.getElementById('image-preview-container').style.display = 'none';
+            document.getElementById('image-upload').value = '';
+            userInput.placeholder = 'Enter your message...';
+        }
+
+        function dismissLeadForm() {
+            leadModal.classList.remove('active');
+            window.leadSkipped = true;
+        }
+
+        function extractFirstUrl(text) {
+            const match = text.match(/https?:\/\/[^\s]+/);
+            return match ? match[0] : null;
+        }
+
+        async function fetchResponse(userText) {
+            const loading = document.createElement('div');
+            loading.className = 'message ai-message';
+            loading.innerHTML = '<span style="opacity:0.6">Analyzing...</span>';
+            chatContainer.appendChild(loading);
+
+            try {
+                if (!API_URL) {
+                    throw new Error('API base not configured. Add ?api_base=https://<railway-domain>/api/v1 to the frontend URL.');
+                }
+
+                const history = messages
+                    .slice(0, -1)
+                    .filter(msg => msg.role === 'user' || msg.role === 'assistant')
+                    .map(msg => ({ role: msg.role, content: msg.content }));
+
+                const payload = {
+                    message: userText,
+                    url: extractFirstUrl(userText) || DEFAULT_CONTEXT_URL,
+                    history: history
+                };
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 120000);
+                const response = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`Status ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (loading.parentNode) {
+                    chatContainer.removeChild(loading);
+                }
+
+                if (data.answer) addMessage('assistant', data.answer);
+                else addMessage('assistant', 'System error.');
+            } catch (e) {
+                if (loading.parentNode) {
+                    chatContainer.removeChild(loading);
+                }
+                let errorMessage = e.message;
+                if (e instanceof TypeError && /fetch/i.test(e.message)) {
+                    errorMessage = 'Failed to fetch. Ensure Railway backend is running and CORS is allowed for your frontend domain.';
+                }
+                addMessage('assistant', `⚠️ **Error**: ${errorMessage}.`);
+            } finally {
+                userInput.placeholder = 'Enter your message...';
+            }
+        }
+
+        async function handleLeadSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('lead-submit');
+            btn.innerHTML = 'Verifying...';
+            btn.disabled = true;
+
+            try {
+                const leadPayload = {
+                    name: document.getElementById('lead-name').value,
+                    email: document.getElementById('lead-email').value,
+                    phone: document.getElementById('lead-phone').value
+                };
+                console.log('Lead submitted (frontend-only):', leadPayload);
+
+                leadSubmitted = true;
+                leadModal.classList.remove('active');
+                addMessage('assistant', 'Acknowledged. Proceed with consultation.');
+                userInput.placeholder = 'Enter message...';
+            } catch (e) {
+                alert('Error.');
+                btn.innerHTML = 'Verify & Continue';
+                btn.disabled = false;
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

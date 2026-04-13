@@ -1,0 +1,25 @@
+# Web Framework
+fastapi
+
+# ASGI Server
+uvicorn
+
+# Data Validation & Settings (Pydantic v2)
+pydantic
+pydantic-settings
+
+# Environment Variables
+python-dotenv
+
+# HTTP Client (Essential for calling external LLM APIs like Gemini or OpenAI)
+httpx
+
+# Optional: AI/LLM Integration (Uncomment if using these libraries)
+langchain
+google-generativeai
+langchain-google-genai
+beautifulsoup4
+
+langchain-core
+langchain-groq
+langgraph
